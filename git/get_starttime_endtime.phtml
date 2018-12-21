@@ -1,0 +1,97 @@
+<?php 
+    /**
+     * 获取右侧时间选项卡
+     */
+    public function get_rigft_time_nav(){
+        $time = time();
+        //月
+        //上月开始时间
+        $last_month_start = date('Y-m-d 00:00:00', strtotime('first day of last month midnight'));
+        //上月结束时间
+        $last_month_end = date('Y-m-d 23:59:59', strtotime('first day of this month midnight')-1);
+        //本月开始时间
+        $this_month_start = date('Y-m-01 00:00:00', $time);
+        //本月结束时间
+        $this_month_end = date('Y-m-d 23:59:59', strtotime('first day of next month midnight')-1);
+
+
+        //周
+        //本周开始时间戳
+        $this_week_start_time = strtotime('this week midnight');
+        //本周开始时间
+        $this_week_start = date('Y-m-d 00:00:00',$this_week_start_time);
+        //本周结束时间
+        $this_week_end = date('Y-m-d 23:59:59', $this_week_start_time+604799);
+        //上周开始时间
+        $last_week_start = date('Y-m-d 00:00:00', $this_week_start_time-604800);
+        //上周结束时间
+        $last_week_end = date('Y-m-d 23:59:59', $this_week_start_time-1);
+
+
+        //天
+        //今天开始时间
+        $this_day_start = date('Y-m-d 00:00:00',$time);
+        //今天开始时间戳
+        $this_day_start_time = strtotime($this_day_start);
+        //今天结束时间
+        $this_day_end = date('Y-m-d 23:59:59', $this_day_start_time+86399);
+        //昨天开始时间
+        $last_day_start = date('Y-m-d 00:00:00', $this_day_start_time-86400);
+        //昨天结束时间
+        $last_day_end = date('Y-m-d 23:59:59', $this_day_start_time-1);
+
+        $time_nav = [
+            ['title'=>'上月', 'start_time'=>$last_month_start,'end_time'=>$last_month_end],
+            ['title'=>'本月', 'start_time'=>$this_month_start,'end_time'=>$this_month_end],
+            ['title'=>'上周', 'start_time'=>$last_week_start,'end_time'=>$last_week_end],
+            ['title'=>'本周', 'start_time'=>$this_week_start,'end_time'=>$this_week_end],
+            ['title'=>'昨天', 'start_time'=>$last_day_start,'end_time'=>$last_day_end],
+            ['title'=>'今天', 'start_time'=>$this_day_start,'end_time'=>$this_day_end],
+        ];
+
+        $this->view->time_nav = $time_nav;
+
+        $get_param_str = '';
+        $get = $this->request->get();
+        unset($get['_url']);
+        unset($get['start_time']);
+        unset($get['end_time']);
+        if($get && is_array($get)){
+            foreach($get AS $key => $value){
+                $get_param_str .= '&' . $key . '=' . $value;
+            }
+        }
+        $this->view->get_param_str = $get_param_str;
+    }
+ ?>
+ <!DOCTYPE html>
+ <html>
+ <head>
+     <title></title>
+ </head>
+ <body>
+ <div class="float-r">
+    <div class="date_box flex-r-l ">
+        <div class="date_check flex-r">
+        <?php if ($time_nav) { ?>
+            <?php foreach ($time_nav AS $value): ?>
+                <?php if ($value['start_time'] == $this->request->get('start_time')
+                    && $value['end_time'] == $this->request->get('end_time')) { ?>
+                    <a class="datec_item active"
+                       href="?<?php echo $get_param_str; ?>">
+                        <?php echo $value['title']; ?>
+                    </a>
+                <?php } else { ?>
+                    <a class="datec_item"
+                       href="?start_time=<?php echo $value['start_time']; ?>&end_time=<?php echo $value['end_time']; ?><?php echo $get_param_str; ?>">
+                        <?php echo $value['title']; ?>
+                    </a>
+
+                <?php } ?>
+            <?php endforeach; ?>
+        <?php } ?>
+        </div>
+    </div>
+</div>
+ </body>
+ </html>
