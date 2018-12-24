@@ -1,0 +1,23 @@
+    <script type="text/javascript">
+      // 多选框事件方法
+    function checkchange(e) {
+      var name = $(e).attr("checker");
+      var ischecked = $(e).is(':checked');
+      // if (name == "id_all") {
+        $("input[checker^='"+name+"']").each(function (i) {
+          $(this).prop("checked", ischecked);
+        });
+      // } else if (name == "id") {
+      //     var n = 0;
+      //     $("input[name='id']").each(function (i) {
+      //         if ($(this).is(':checked') !== ischecked) {
+      //             n++;
+      //         }
+      //         ;
+      //     });
+      //     var v = (n == 0) ? ischecked : false;
+      //     $("input[name='id_all']").prop("checked", v);
+      // }
+    }
+      
+    </script>
