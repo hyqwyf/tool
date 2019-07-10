@@ -1,7 +1,19 @@
 <?php
+// 指定允许其他域名访问
+
+header('Access-Control-Allow-Origin:*');
+
+// 响应类型
+
+header('Access-Control-Allow-Methods:POST');
+
+// 响应头设置
+
+header('Access-Control-Allow-Headers:x-requested-with,content-type');
 function v($c){
 	var_dump($c);die();
 }
+header("Content-Type: text/html;charset=utf-8");
 function i_array_column($input, $columnKey, $indexKey=null){
 	if(!function_exists('array_column')){
 		$columnKeyIsNumber  = (is_numeric($columnKey))?true:false;
@@ -35,19 +47,68 @@ function i_array_column($input, $columnKey, $indexKey=null){
 		const ERROR_CODE=203;
 		const SUCCESS_CODE=200;
 		const NO_DATA=202;
-		public $conn;
+		private static $dbcon=false;
+		private $host;
+		private $port;
+		private $user;
+		private $pass;
+		private $db;
+		private $charset;
+		private $conn =false;
 		protected $field;
 		protected $need_column_methold = array('update','insert');
-		public function __construct($dbname,$table,$methold){//构造函数
-			$this->conn = new MySQLi(localhost,'root','k3o3m3nmkl33m','uchewu',3306);//数据库连接
+		public function __construct($table,$methold){//构造函数
+			// @$this->conn = new MySQLi('localhost','root','k3o3m3nmkl33m','uchewu',3306);//数据库连接
+			// if (!$this->conn)
+			// {
+			//     die("连接失败: " . mysqli_connect_errno());
+			// }
 			// $this->conn = new MySQLi("localhost",'root','123456','car',3306);//数据库连接
+			// if ($this->conn->connect_errno){
+			// 	die("Connect Error :".$this->conn->connect_error);  
+			// }
+			$this->host =  'localhost';
+			$this->port =  '3306';
+			$this->user =  'root';
+			$this->pass =  '12356';
+			$this->db =  'car';
+			$this->charset= 'utf8';
+			$this->db_connect();
 			if (in_array($methold, $this->need_column_methold)) {
 				$this->getColumn($table);
 			}
 		}
+		  //连接数据库
+		private function db_connect(){
+			@$this->conn=mysqli_connect($this->host.':'.$this->port,$this->user,$this->pass);
+			if(mysqli_connect_errno($this->conn)){
+				echo "数据库连接失败<br>";
+				echo "错误编码".mysqli_connect_errno()."<br>";
+				echo "错误信息".mysqli_connect_error()."<br>";
+				exit;
+			}
+		}
+		//设置字符集
+		private function db_charset(){
+			mysqli_query($this->conn,"set names {$this->charset}");
+		}
+    	//选择数据库
+		private function db_usedb(){
+			mysqli_query($this->conn,"use {$this->db}");
+		}
+   		//私有的克隆
+		private function __clone(){
+			die('clone is not allowed');
+		}
+		public static function getIntance($table,$methold){
+			if(self::$dbcon==false){
+				self::$dbcon=new self($table,$methold);
+			}
+			return self::$dbcon;
+		}
 		protected function getColumn($table){
 			$res = $this->conn->query("SHOW COLUMNS FROM $table");
-			
+
 			$rt = array();
 			if ($res instanceof mysqli_result)
 			{
@@ -272,7 +333,9 @@ function i_array_column($input, $columnKey, $indexKey=null){
 	}else{
 		$methold = $_GET['methold'];//获取请求执行的操作
 		$table = $_GET['table'];//获取要操作的表
-	    $db = new mysqlSql(DB,$table,$methold);
+		// $db = new mysqlSql(DB,$table,$methold);
+		$db = mysqlSql::getIntance($table,$methold);
+
 		switch ($methold) {
 			case 'insert':
 			$db->zengjia($table);//添加数据
