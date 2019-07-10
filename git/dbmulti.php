@@ -1,19 +1,14 @@
 <?php
 // 指定允许其他域名访问
-
 header('Access-Control-Allow-Origin:*');
-
 // 响应类型
-
 header('Access-Control-Allow-Methods:POST');
-
 // 响应头设置
-
 header('Access-Control-Allow-Headers:x-requested-with,content-type');
+header("Content-Type: text/html;charset=utf-8");
 function v($c){
 	var_dump($c);die();
 }
-header("Content-Type: text/html;charset=utf-8");
 function i_array_column($input, $columnKey, $indexKey=null){
 	if(!function_exists('array_column')){
 		$columnKeyIsNumber  = (is_numeric($columnKey))?true:false;
@@ -54,34 +49,29 @@ function i_array_column($input, $columnKey, $indexKey=null){
 		private $pass;
 		private $db;
 		private $charset;
-		private $conn =false;
+		private $link;
 		protected $field;
 		protected $need_column_methold = array('update','insert');
 		public function __construct($table,$methold){//构造函数
-			// @$this->conn = new MySQLi('localhost','root','k3o3m3nmkl33m','uchewu',3306);//数据库连接
-			// if (!$this->conn)
-			// {
-			//     die("连接失败: " . mysqli_connect_errno());
-			// }
-			// $this->conn = new MySQLi("localhost",'root','123456','car',3306);//数据库连接
-			// if ($this->conn->connect_errno){
-			// 	die("Connect Error :".$this->conn->connect_error);  
-			// }
+			// MySQLi('localhost','root','k3o3m3nmkl33m','uchewu',3306);//数据库连接
+			// $this->link = new MySQLi("localhost",'root','123456','car',3306);//数据库连接
 			$this->host =  'localhost';
 			$this->port =  '3306';
 			$this->user =  'root';
-			$this->pass =  '12356';
+			$this->pass =  '123456';
 			$this->db =  'car';
 			$this->charset= 'utf8';
 			$this->db_connect();
+			$this->db_charset();
+			$this->db_usedb();
 			if (in_array($methold, $this->need_column_methold)) {
 				$this->getColumn($table);
 			}
 		}
-		  //连接数据库
+		 //连接数据库
 		private function db_connect(){
-			@$this->conn=mysqli_connect($this->host.':'.$this->port,$this->user,$this->pass);
-			if(mysqli_connect_errno($this->conn)){
+			@$this->link=mysqli_connect($this->host.':'.$this->port,$this->user,$this->pass);
+			if(mysqli_connect_errno($this->link)){
 				echo "数据库连接失败<br>";
 				echo "错误编码".mysqli_connect_errno()."<br>";
 				echo "错误信息".mysqli_connect_error()."<br>";
@@ -90,11 +80,11 @@ function i_array_column($input, $columnKey, $indexKey=null){
 		}
 		//设置字符集
 		private function db_charset(){
-			mysqli_query($this->conn,"set names {$this->charset}");
+			mysqli_query($this->link,"set names {$this->charset}");
 		}
     	//选择数据库
 		private function db_usedb(){
-			mysqli_query($this->conn,"use {$this->db}");
+			mysqli_query($this->link,"use {$this->db}");
 		}
    		//私有的克隆
 		private function __clone(){
@@ -107,7 +97,7 @@ function i_array_column($input, $columnKey, $indexKey=null){
 			return self::$dbcon;
 		}
 		protected function getColumn($table){
-			$res = $this->conn->query("SHOW COLUMNS FROM $table");
+			$res = $this->link->query("SHOW COLUMNS FROM $table");
 
 			$rt = array();
 			if ($res instanceof mysqli_result)
@@ -152,7 +142,7 @@ function i_array_column($input, $columnKey, $indexKey=null){
 					// 		# code...
 					// 		break;
 					// }
-					$row = $this->conn->query($sql);
+					$row = $this->link->query($sql);
 					if ($row) {//插入成功
 						$this->json_return(self::SUCCESS_CODE,'insert success','');
 					}else{//插入失败
@@ -183,7 +173,7 @@ function i_array_column($input, $columnKey, $indexKey=null){
 				$key = addslashes($_GET['key']);//更新条件键
 				$val = addslashes($_GET['val']);//更新条件值
 				$sql1 = "SELECT * from ".$table." where $key = '$val'";
-				$result1= mysqli_query($this->conn,$sql1);//查询需要更新的数据是否存在
+				$result1= mysqli_query($this->link,$sql1);//查询需要更新的数据是否存在
 				if(!mysqli_num_rows($result1) > 0) {//需要更新的数据不存在
 					$this->json_return(self::ERROR_CODE,'No update  data','');
 				}else{
@@ -199,7 +189,7 @@ function i_array_column($input, $columnKey, $indexKey=null){
 						//去除最后一个的逗号
 						$sql = trim($sql,',');
 						$sql .= 'where '.$key.'='.$val;
-						$result= mysqli_query($this->conn,$sql);
+						$result= mysqli_query($this->link,$sql);
 						if ($result) {//更新成功
 							$this->json_return(self::SUCCESS_CODE,'update success',$result);
 						}else{//更新失败
@@ -229,17 +219,22 @@ function i_array_column($input, $columnKey, $indexKey=null){
 				$val = addslashes($_GET['val']);//删除条件值
 	            //查询要删除的数据是否存在
 				$sql = "SELECT * FROM ".$table." WHERE $key= '$val'";
-				$result= mysqli_query($this->conn,$sql);
-				if (mysqli_num_rows($result) > 0) {//存在符合删除条件的数据
-					//删除数据
-					$sql = "DELETE FROM ".$table." WHERE $key= '$val'";
-					$row = mysqli_query($this->conn,$sql);
-					if ($row) {//删除成功
-						$this->json_return(self::SUCCESS_CODE,'delete success','');
-					}else{//删除失败
-						$this->json_return(self::ERROR_CODE,'delete failed','');
+				$result= mysqli_query($this->link,$sql);
+				if ($result !== false) {
+					if (mysqli_num_rows($result) > 0) {//存在符合删除条件的数据
+						//删除数据
+						$sql = "DELETE FROM ".$table." WHERE $key= '$val'";
+						$row = mysqli_query($this->link,$sql);
+						if ($row) {//删除成功
+							$this->json_return(self::SUCCESS_CODE,'delete success','');
+						}else{//删除失败
+							$this->json_return(self::ERROR_CODE,'delete failed','');
+						}
+					} else {//没有符合删除条件的数据
+						$this->json_return(self::NO_DATA,'no data','');
 					}
-				} else {//没有符合删除条件的数据
+					# code...
+				}else{
 					$this->json_return(self::NO_DATA,'no data','');
 				}
 			}
@@ -259,7 +254,8 @@ function i_array_column($input, $columnKey, $indexKey=null){
 				$key = addslashes($_GET['key']);//查询条件键
 				$val = addslashes($_GET['val']);//查询条件值
 				$sql = "SELECT * FROM ".$table." WHERE $key= '".$val."'";
-				$result= mysqli_query($this->conn,$sql);
+				$result= mysqli_query($this->link,$sql);
+				v($sql);
 				if ($result!== false) {
 					if (mysqli_num_rows($result) > 0) {
 						if($row = mysqli_fetch_assoc($result)) {// 输出数据
@@ -288,7 +284,7 @@ function i_array_column($input, $columnKey, $indexKey=null){
 				$val = addslashes($_GET['val']);
 				$sql.=" WHERE $key = '".$val."'";
 			}
-			$result= mysqli_query($this->conn,$sql);
+			$result= mysqli_query($this->link,$sql);
 			if ($result !== false) {
 				if (mysqli_num_rows($result) > 0) {
 					while($row = mysqli_fetch_assoc($result)) {// 输出数据
@@ -327,13 +323,12 @@ function i_array_column($input, $columnKey, $indexKey=null){
 			return print_r(json_encode($data));	
 		}
 	}
-	define("DB", "uchewu");
+
 	if (empty($_GET['methold']) || empty($_GET['table'])) {
 		$db->json_return($db::ERROR_CODE,"Parameter error",'');
 	}else{
 		$methold = $_GET['methold'];//获取请求执行的操作
 		$table = $_GET['table'];//获取要操作的表
-		// $db = new mysqlSql(DB,$table,$methold);
 		$db = mysqlSql::getIntance($table,$methold);
 
 		switch ($methold) {
