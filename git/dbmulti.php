@@ -53,7 +53,6 @@ function i_array_column($input, $columnKey, $indexKey=null){
 		protected $field;
 		protected $need_column_methold = array('update','insert');
 		public function __construct($table,$methold){//构造函数
-			// MySQLi('localhost','root','k3o3m3nmkl33m','uchewu',3306);//数据库连接
 			// $this->link = new MySQLi("localhost",'root','123456','car',3306);//数据库连接
 			$this->host =  'localhost';
 			$this->port =  '3306';
