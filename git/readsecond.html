@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title></title>
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+	<!-- <meta http-equiv="content-Type" content="text/html; charset=gb2312"> -->
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />  
+	<script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
+</head>
+<body>
+
+
+	<!-- <form> -->
+  <div class="form-group">
+  	<span class="label label-primary">phone_num</span>
+    <input type="text" class="form-control" name="phone_num" id="exampleInputEmail1" placeholder="phone number">
+  	<span class="label label-primary">captcha</span>
+    <input type="text" class="form-control" name="captcha" id="exampleInputEmail1" placeholder="captcha">
+  </div>
+  <button type="button"   id="secondShow" class="btn btn-success  hq">获取验证码</button>  
+  <button type="button"   class="btn btn-success  yz">验证</button>
+</body>
+<script type="text/javascript">
+// 获取验证码按钮点击事件
+function setDisabledTime(id, time) {
+        var btn = $("#" + id);
+        var originBtnValue = btn.text();
+        btn.fadeIn(1000);
+        btn.text(time <= 0 ? originBtnValue : ("" + (time) + "秒后可重新发送"));
+        var hander = setInterval(function () {
+            if (time <= 0) {
+                clearInterval(hander);
+                btn.text(originBtnValue);
+                btn.removeAttr("disabled");
+            } else {
+                btn.attr({ "disabled": "disabled" });
+                btn.text("" + (time--) + "秒后可重新发送");
+            }
+        }, 1000);
+    };
+$(".hq").click(function () {
+	setDisabledTime('secondShow',30);
+	      var phone = $("input[name='phone_num']").val();
+           $.ajax({
+               url: "http://dbtest.co/msg2/aliyun-dysms-php-sdk/send.php",
+               type: "GET",
+               data: {phone_num:phone},
+               success: function (data) {
+               	   data = JSON.parse(data)
+                   if (data.code == 200) {
+                   	alert('发送成功');
+                   }else{
+                   	alert(data.msg)
+                   }
+               }
+           })
+       })
+$(".yz").click(function () {
+	      var phone = $("input[name='phone_num']").val();
+	      var captcha = $("input[name='captcha']").val();
+           $.ajax({
+               url: "http://dbtest.co/msg2/aliyun-dysms-php-sdk/msgvalidate.php",
+               type: "GET",
+               data: {phone_num:phone,va_code:captcha},
+               success: function (data) {
+               	data == JSON.parse(data)
+                   if (data.code == 200) {
+                   	alert('验证成功');
+                   }else{}
+               }
+           })
+       })
+
+</script>
+</html>
