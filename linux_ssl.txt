@@ -1,0 +1,104 @@
+一、Linux自签（OPENSSL生成SSL自签证书）
+第1步：生成私钥
+执行如下命令生成一个RSA私钥
+
+//生成rsa私钥，des3算法，1024位强度，ssl.key是秘钥文件名。
+openssl genrsa -des3 -out ssl.key 1024
+然后他会要求你输入这个key文件的密码，由你随便设置。
+由于以后要给nginx使用。每次reload nginx配置时候都要你验证这个PAM密码的。
+但是生成时候必须输入密码。如果不想以后那么麻烦，生成之后可以执行如下命令再删掉。
+
+openssl rsa -in ssl.key -out ssl.key
+第2步：生成CSR（证书签名请求）
+根据刚刚生成的key文件来生成证书请求文件，操作如下：
+
+openssl req -new -key ssl.key -out ssl.csr
+说明：执行以上命令后，需要依次输入国家、地区、城市、组织、组织单位、Common Name和Email。其中Common Name应该与域名保持一致。
+
+Country Name (2 letter code) [AU]:CN
+State or Province Name (full name) [Some-State]:GuangDong
+Locality Name (eg, city) []:ShenZhen
+Organization Name (eg, company) [Internet Widgits Pty Ltd]:tsy
+Organizational Unit Name (eg, section) []:tsy
+Common Name (e.g. server FQDN or YOUR name) []:selfssl.hxkj.vip   这一项必须和你的域名一致
+Email Address []:t@tsy6.com
+第3步：生成自签名证书
+根据以上2个文件生成crt证书文件，执行下面命令：
+
+//这里3650是证书有效期(单位：天)。这个大家随意。最后使用到的文件是key和crt文件。
+openssl x509 -req -days 3650 -in ssl.csr -signkey ssl.key -out ssl.crt
+需要注意的是，在使用自签名的临时证书时，浏览器会提示证书的颁发机构是未知的。
+
+第4步：安装私钥和证书
+打开conf目录中的nginx.conf配置文件修改443端口监听配置。一般nginx配置文件默认路径为 /etc/nginx/nginx.conf，执行如下命令打开并修改：
+
+vim /etc/nginx/nginx.conf    //路径是你的nginx配置文件路径
+Nginx默认配置是将443端口的监听配置注释掉了的，如下：
+
+# Settings for a TLS enabled server.
+  #  server {
+    #    listen       443;
+      #  server_name  localhost;
+        #ssl on;
+        #root         /usr/share/nginx/html;
+
+        #ssl_certificate "";
+        #ssl_certificate_key "";
+        #ssl_session_cache shared:SSL:1m;
+        #ssl_session_timeout  5m;
+        #ssl_protocols SSLv2 SSLv3 TLSv1;
+        #ssl_ciphers HIGH:!aNULL:!MD5;
+        #ssl_prefer_server_ciphers on;
+#
+        # Load configuration files for the default server block.
+  #      include /etc/nginx/default.d/*.conf;
+#
+  #      location / {
+    #    }
+#
+  #      error_page 404 /404.html;
+    #        location = /40x.html {
+      #  }
+#
+  #      error_page 500 502 503 504 /50x.html;
+    #        location = /50x.html {
+      #  }
+    #}
+将注释打开，并对其中部分内容进行修改，修改后如下：
+
+# Settings for a TLS enabled server.
+    server {
+        listen       443;
+        server_name  selfssl.hxkj.vip;  //此处填写你自己的域名
+        ssl on;
+        root         /usr/share/nginx/html;
+
+        ssl_certificate "/home/ssl/ssl.crt";   //此处填写刚刚生成的ssl.crt文件路径
+        ssl_certificate_key "/home/ssl/ssl.key";    //此处填写刚刚生成的ssl.key文件路径
+        ssl_session_cache shared:SSL:1m;
+        ssl_session_timeout  5m;
+        ssl_protocols SSLv2 SSLv3 TLSv1;
+        ssl_ciphers ECDHE-RSA-AES128-GCM-SHA256:ECDHE:ECDH:AES:HIGH:!NULL:!aNULL:!MD5:!ADH:!RC4;
+        ssl_prefer_server_ciphers on;
+
+        location / {
+        }
+
+        error_page 404 /404.html;
+            location = /40x.html {
+        }
+
+        error_page 500 502 503 504 /50x.html;
+            location = /50x.html {
+        }
+    }
+修改配置并保存后，执行以下命令：
+
+nginx -s reload
+可使nginx重新加载配置，使配置生效。
+
+OK，到这里就完成了使用Linux自签的方法配置https协议，大家也可访问我的页面来查看效果，地址：https://selfssl.hxkj.vip
+tips:自签证书因为安全性很低，会被谷歌浏览器拦截
+
+下面是证书检测详情
+自签证书检测详情
