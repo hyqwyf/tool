@@ -1,0 +1,60 @@
+server {
+        listen       80;
+        server_name  x.tflive.cn www.x.tflive.cn;
+
+        root   /data/xc/wechat/public/;
+        index index.php index.html index.htm;
+
+        error_log   /var/log/nginx/xue_blog.error.log;
+        access_log  /var/log/nginx/xue_blog.access.log;
+
+
+        location / {  if (!-e $request_filename) {
+                rewrite ^(.*)$ /index.php$1 last;
+                break;
+            }
+        }
+
+        location ~ ^(.+\.php)(.*)$ {
+            # try_files $uri =404;
+            fastcgi_pass 127.0.0.1:9000;
+            fastcgi_index index.php;
+
+            include fastcgi_params;
+            fastcgi_split_path_info ^(.+\.php)(\/?.*)$;
+            fastcgi_param PATH_INFO $fastcgi_path_info;
+
+            # 强制将某些非法地址交给 index.php 处理
+            set $new_fastcgi_script_name $fastcgi_script_name;
+            if (!-e $document_root$fastcgi_script_name) {
+                set $new_fastcgi_script_name "/index.php";
+            }
+
+            fastcgi_param SCRIPT_FILENAME $document_root$new_fastcgi_script_name;
+            fastcgi_param SCRIPT_NAME $new_fastcgi_script_name;
+        }
+
+        location /nginx_status
+        {
+            stub_status on;
+            access_log   off;
+        }
+
+        location ~ .*\.(gif|jpg|jpeg|png|bmp|swf)$
+        {
+            if (!-e $request_filename) {
+                rewrite ^/(uploads/.*)$ /pic.php?$1 last;
+            }
+            expires      30d;
+        }
+
+        location ~ .*\.(js|css)?$
+        {
+            expires      12h;
+        }
+
+        location ~ /\.
+        {
+            deny all;
+        }
+}
