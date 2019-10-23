@@ -1,0 +1,139 @@
+1:mysqldump_backup(window).bat
+
+forfiles /p "C:\Users\q\Desktop\back" /m backup_*.sql -d -30 /c "cmd /c del /f @path"
+set "myDate=%date:~0,4%%date:~5,2%%date:~8,2%0%time:~1,1%%time:~3,2%%time:~6,2%"
+"D:\phpStudy\MySQL\bin\mysqldump" --opt --single-transaction=TRUE --host=127.0.0.1 --user=root  --password=123456 --protocol=tcp --port=3306 --default-character-set=utf8 --single-transaction=TRUE --routines --events "paqu" > "C:\Users\q\Desktop\back\backup_%myDate%.sql"
+
+
+2:php_mysqldump_backup(*).php
+
+<?php 
+
+date_default_timezone_set("Asia/Shanghai");
+/*********************************备份数据库start*********数据库大小100G以下*******************/
+$db_user="root";//数据库账号
+$db_pwd="123456";//数据库密码
+$db_name="paqu";//数据库名
+$filename=date("Y-m-d")."-".time();
+$name="./back3/".$filename.".sql";//数据库文件存储路径
+$exec="D:\phpStudy\MySQL\bin\mysqldump -u".$db_user." -p".$db_pwd." ".$db_name." > ".$name;
+$result=exec($exec);
+
+ ?>
+ (等同于mysqldump.bat
+ @echo off
+set "yMd=%date:~,4%%date:~5,2%%date:~8,2%"
+set "hms=%time:~,2%%time:~3,2%%time:~6,2%"
+"D:\phpStudy\MySQL\bin\mysqldump.exe" -uroot -p123456 paqu>C:\Users\q\Desktop\back2\mysql_backup_%yMd%-%hms%.sql
+@echo on
+ )
+ 还原
+ <php?
+/*********************************还原数据库start******数据库大小100G以下**********************/
+$db_user="***";//数据库账号
+$db_pwd="****";//数据库密码
+$db_name="second";//数据库名
+$filename=data("Y-m-d")."-".time();
+$name="E:/dataBackup/second_bear".$filename.".sql";//数据库文件存储路径
+$exec="E:/MySQL/bin/mysql -u".$db_user." -p".$db_pwd." ".$db_name." < ".$name;
+$result=exec($exec);
+//print_r($result);
+/*********************************还原数据库end****************************/
+?>
+ 
+3.php_backup.php
+
+<?php
+function backup($host,$user,$pass,$name,$save_dir,$tables = '*')
+    {
+        $link = mysqli_connect($host, $user, $pass, $name);
+        if ($tables == '*') {
+            mysqli_query($link, "set names 'utf8'");
+            $tables = array();
+            $result = mysqli_query($link, 'SHOW TABLES');
+            while ($row = mysqli_fetch_row($result)) {
+                $tables[] = $row[0];
+            }
+        } else {
+            $tables = is_array($tables) ? $tables : explode(',', $tables);
+        }
+        $return = "";
+        // $return.="SET FOREIGN_KEY_CHECKS=0;\r\n";
+        $return .= "/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;\r\n/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;\r\n/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;\r\n/*!40101 SET NAMES utf8 */;\r\n/*!40103 SET @OLD_TIME_ZONE=@@TIME_ZONE */;\r\n/*!40103 SET TIME_ZONE='+00:00' */;\r\n/*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;\r\n/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;\r\n/*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;\r\n/*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;\r\n";
+        foreach ($tables as $table) {
+            $result = mysqli_query($link, 'SELECT * FROM ' . $table);
+            $num_fields = mysqli_num_fields($result);
+            $return .= " DROP TABLE IF EXISTS " . $table . ";\r\n";
+            $return .= "/*!40101 SET @saved_cs_client     = @@character_set_client */;\r\n/*!40101 SET character_set_client = utf8 */;\r\n";
+            $row2 = mysqli_fetch_row(mysqli_query($link, 'SHOW CREATE TABLE ' . $table));
+            $return .= $row2[1] . ";\r\n";
+            $return .= "/*!40101 SET character_set_client = @saved_cs_client */;\r\n";
+            $return .= "LOCK TABLES " . $table . " WRITE;\r\n";
+            $return .= "/*!40000 ALTER TABLE " . $table . " DISABLE KEYS */;\r\n";
+            for ($i = 0; $i < $num_fields; $i++) {
+                while ($row = mysqli_fetch_row($result)) {
+                    $return .= 'INSERT INTO ' . $table . ' VALUES(';
+                    for ($j = 0; $j < $num_fields; $j++) {
+                        if (is_null($row[$j])) {
+                            $return .= 'Null';
+                        } else {
+                            $row[$j] = addslashes($row[$j]);
+                            $row[$j] = @str_replace("\n", "\\n", $row[$j]);
+                            if (isset($row[$j])) {
+                                $return .= '"' . $row[$j] . '"';
+                            } else {
+                                $return .= '""';
+                            }
+                        }
+                        if ($j < ($num_fields - 1)) {
+                            $return .= ',';
+                        }
+                    }
+                    $return .= ");\r\n";
+                }
+            }
+            $return .= "/*!40000 ALTER TABLE " . $table . " ENABLE KEYS */;\r\n";
+            $return .= "UNLOCK TABLES;" . "\r\n";
+            $return .= "\r\n";
+        }
+        date_default_timezone_set("Asia/Shanghai");
+        $time = date("Ymd_His");
+        $handle = fopen($save_dir . 'db-backup-' .$time . '-' . (md5(implode(',', $tables))).".sql", 'w+');
+        $return = "\xEF\xBB\xBF" . $return;
+        fputs($handle, $return);
+        fclose($handle);
+        $filename   = $save_dir. 'db-backup-' . $time . '-' . (md5(implode(',', $tables))).".sql";
+        $zip = new ZipArchive();
+        $zip->open($filename.".gz", ZipArchive::CREATE);
+        $zip->addFile($filename);
+    
+        $zip->close();
+        @unlink($filename);
+        
+    }      
+
+    backup('127.0.0.1','root','123456',"paqu","./back/",$tables = '*');
+
+    function z_del_file_by_ctime($dir,$n){
+    if(is_dir($dir)){
+        if($dh=opendir($dir)){
+            while (false !== ($file = readdir($dh))){
+                if($file!="." && $file!=".."){
+                    $fullpath=$dir."/".$file;
+                    if(!is_dir($fullpath)){ 
+                        $filedate=filemtime($fullpath);
+                        $minutes=round((time()-$filedate)/60);
+                        if($minutes>$n)
+                            unlink($fullpath); //删除文件
+                    }
+                }
+            }
+        }
+        closedir($dh);
+    }
+}
+
+//下面是调用的代码
+//删除1天前的文件
+$dir = realpath('./back/');
+z_del_file_by_ctime($dir, 24*60);
