@@ -137,3 +137,13 @@ function backup($host,$user,$pass,$name,$save_dir,$tables = '*')
 //删除1天前的文件
 $dir = realpath('./back/');
 z_del_file_by_ctime($dir, 24*60);
+
+window定时任务.bat
+
+打开开始菜单, 直接搜索计划任务
+创建任务
+常规项中,选择不管用户是否登录都运行+使用最高权限运行
+触发器选每天凌晨时间, 下面的勾全取消
+操作选启动程序,添加刚才编写的脚本
+条件和设置中的勾全取消 , 点确定
+OK啦 , 大功告成!
