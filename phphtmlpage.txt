@@ -1,0 +1,269 @@
+<?php
+class Mypage
+{
+    private $cur_page;//当前页
+    private $total;//总条数
+    private $page_size = 10;//每页显示的条数
+    private $total_page;//总页数
+    private $first_page;//首页显示名称
+    private $pre_page;//上一页的显示名称
+    private $nex_page;//下一页的显示名称
+    private $end_page;//尾页名称
+    private $params;//分页后面的筛选参数
+    private $num_size = 2;//当前页前后显示几个分页码
+    private $base_url;//分页链接地址
+
+    public function __construct(array $page_config = array())
+    {
+        $this->cur_page = $page_config['cur_page'];
+        $this->total = $page_config['total'];
+        $this->page_size = $page_config['page_size'];
+        $this->base_url = $page_config['base_url'];
+        $this->pre_page = isset($page_config['pre_page']) ? $page_config['pre_page'] : "上一页";
+        $this->nex_page = isset($page_config['next_page']) ? $page_config['next_page'] : "下一页";
+        $this->end_page = isset($page_config['end_page']) ? $page_config['end_page'] : "尾页";
+        $this->first_page = isset($page_config['first_page']) ? $page_config['first_page'] : "首页";
+        $this->num_size = isset($page_config['num_size']) ? $page_config['num_size'] : 2;
+        $this->params = isset($page_config['params']) ? $page_config['params'] : '';
+        $this->total_page = ceil($this->total / $this->page_size);
+    }
+
+    /**
+     * 获取首页的链接地址
+     */
+    public function get_first_page()
+    {
+        if ($this->cur_page > 1 && $this->cur_page != 1) {
+            return $this->get_link($this->get_url(1), $this->first_page);
+        }
+        return "<span>$this->first_page</span>";
+    }
+
+    /**
+     * 获取上一页链接地址
+     */
+    public function get_prev_page()
+    {
+        if ($this->cur_page > 1 && $this->cur_page != 1) {
+            return $this->get_link($this->get_url($this->cur_page - 1), $this->pre_page);
+        }
+        return '<span>' . $this->pre_page . '</span>';
+    }
+
+    /**
+     * 获取下一页链接地址
+     * @return string
+     */
+    public function get_next_page()
+    {
+        if ($this->cur_page < $this->total_page) {
+            return $this->get_link($this->get_url($this->cur_page + 1), $this->nex_page);
+        }
+        return '<span>' . $this->nex_page . '</span>';
+    }
+
+    /**
+     * 获取...符号
+     * @return string
+     */
+    public function get_ext()
+    {
+        return '<span>...</span>';
+    }
+
+    /**
+     * 获取尾页地址
+     */
+    public function get_end_page()
+    {
+        if ($this->cur_page < $this->total_page) {
+            return $this->get_link($this->get_url($this->total_page), $this->end_page);
+        }
+        return '<span>' . $this->end_page . '</span>';
+    }
+
+    /**
+     * 中间的数字分页
+     */
+    public function now_bar()
+    {
+        if ($this->cur_page > $this->num_size) {
+            $begin = $this->cur_page - $this->num_size;
+            $end = $this->cur_page + $this->num_size;
+            //判断最后一页是否大于总页数
+            if ($end > $this->total_page) {
+                //重新计算开始页和结束页
+                $begin = ($this->total_page - 2 * $this->num_size > 0) ? $this->total_page - 2 * $this->num_size : 1;
+                //这里为什么用2*$this->num_size呢？因为当前页前后有2个$this->num_size的间距，所以这里是2*$this->num_size
+                $end = $this->total_page;
+            }
+        } else {
+            $begin = 1;
+            $end = 2 * $this->num_size + 1;//此处的2和上面已经解释过了，+1是因为除了当前页，前后还有2*$this->num_size的间距，所以总页码条数为2*$this->num_size+1
+        }
+        $page_html = '';
+        for ($i = $begin; $i <= $end; $i++) {
+            if ($i == $this->cur_page) {
+                $page_html .= '<span class="disabled">' . $i . '</span>';
+            } else {
+                $page_html .= $this->get_link($this->get_url($i), $i);
+
+            }
+        }
+        return $page_html;
+    }
+
+    /**
+     * 输出分页码
+     */
+    public function show_page()
+    {
+        $show_page = '';
+        $ext = ($this->cur_page > $this->num_size) ? $this->get_ext() : '';
+        $show_page .= $this->show_total_row();
+        $show_page .= $this->show_total_page();
+        $show_page .= $this->get_first_page();
+        $show_page .= $this->get_prev_page();
+        $show_page .= $ext;
+        $show_page .= $this->now_bar();
+        $show_page .= $ext;
+        $show_page .= $this->get_next_page();
+        $show_page .= $this->get_end_page();
+
+        return $show_page;
+    }
+
+    /**
+     * 获取分页地址 xxx.com/index/3
+     * @param $i
+     */
+    public function get_url($i)
+    {
+
+        if (isset($_GET["type"])) {
+            if ($_GET['type']) {
+                return $this->base_url . '.php?page=' . $i . "&type=" . $_GET["type"];
+            }
+        } else {
+            return $this->base_url . '.php?page=' . $i;
+        }
+    }
+
+    /**
+     * 获取分页完整链接
+     * @param $url
+     */
+    public function get_link($url, $text)
+    {
+        if ($this->params) $url .= $this->params;
+        return "<a href='$url'>$text</a>";
+    }
+
+    /**
+     * 返回总条数
+     * @return string
+     */
+    public function show_total_row()
+    {
+        // return "共{$this->total}条";
+    }
+
+    /**
+     * 返回总页数
+     */
+    public function show_total_page()
+    {
+        return "共{$this->total_page}页";
+    }
+}
+?>
+<?php
+$host = '127.0.0.1';
+$db_user = 'root';
+$db_pass = 'xxxxx';
+$db_name = 'sssss';
+$link = new mysqli($host, $db_user, $db_pass);
+
+if (mysqli_connect_errno()) {
+    printf("数据库链接失败了：" . mysqli_connect_error());
+    exit();
+}
+if (!$link->select_db($db_name)) {
+    printf("你选择的数据库{$db_name}不存在");
+    exit();
+}
+
+$page_size = 10;
+$cur_page = $_GET['page'] ? $_GET['page'] : 1;
+if (isset($_GET['type'])) {
+    $sql = "SELECT COUNT(1) nums FROM feedback where type = " . $_GET['type'];
+} else {
+    $sql = "SELECT COUNT(1) nums FROM feedback";
+}
+$query = $link->query($sql);
+$row = $query->fetch_assoc();
+$total = $row['nums'];//数据总条数
+
+$page_config = array(
+    'cur_page' => $cur_page,
+    'total' => $total,
+    'page_size' => $page_size,
+    'base_url' => '/newweb/feedback_list',
+    'num_link' => 2,
+);
+
+$mypage = new Mypage($page_config);
+
+$start = ($cur_page - 1) * $page_size;//按照分页规律计算出数据起始条数
+if (isset($_GET['type'])) {
+    $sql = "SELECT id,content FROM feedback where type = " . $_GET['type'] . " LIMIT $start,$page_size";
+} else {
+    $sql = "SELECT id,content FROM feedback LIMIT $start,$page_size";
+
+}
+
+if ($result = $link->query($sql)) {
+    $arr = array();
+    while ($row = $result->fetch_assoc()) {
+        $arr[] = $row;
+    }
+}
+
+
+/**
+ * 获取url中的分段数据
+ * @param $url 链接url
+ * @param $seg 获取url中的第几段
+ */
+function get_url_param($url, $seg)
+{
+    $url = explode('/', $url);
+    return isset($url[$seg]) ? $url[$seg] : 1;
+}
+
+/**
+ * 组合url参数 ?id=2&city=3
+ * @param array $data
+ */
+function make_url(array $data = array())
+{
+    $link = '?';
+    $suffix = '&';
+    foreach ($data as $key => $val) {
+        $link .= $key . '=' . $val . $suffix;
+    }
+    return trim($link, $suffix);
+}
+?>
+
+
+<style type="text/css">
+	.page_nav { font-family: Simsun; line-height:normal;text-align: right;margin-top: 10px;overflow: hidden;zoom: 1;text-align:center}
+	.page_nav a,.page_nav  span,.page_nav  input{border-radius: 6px;display:inline-block;line-height:23px;padding:0 10px;border:1px solid #ccc;background-color:#fff; text-decoration:none;color:#666;margin-right:5px;zoom: 1;}
+	.page_nav  input{height: 23px;line-height: 23px;padding: 0;zoom: 1; font:12px/16px;font-family: Simsun;zoom: 1;_margin-bottom:-4px;}
+	.page_nav  a:hover,.page_nav span.pg_curr{color:#fff !important;background-color:#ff5c01; text-decoration:none;}
+	.disabled{ background: #ff5c01 !important; color: #fff !important;}
+</style>
+			<div class="page_nav" style="margin: 15px;">
+			    <?=$mypage->show_page();?>
+			</div>
