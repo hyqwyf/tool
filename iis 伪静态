@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <system.web>
+        <authentication mode="Windows" />
+        <identity impersonate="false" />
+    </system.web>
+    <system.webServer>
+	 <rewrite>
+	  <rules>
+	<rule name="OrgPage">
+	<match url="^(.*)$" />
+	<conditions logicalGrouping="MatchAll">
+	<add input="{HTTP_HOST}" pattern="^(.*)$" />
+	<add input="{REQUEST_FILENAME}" matchType="IsFile" negate="true" />
+	<add input="{REQUEST_FILENAME}" matchType="IsDirectory" negate="true" />
+	</conditions>
+	<action type="Rewrite" url="{R:1}.php" />
+	</rule>
+
+	<rule name="OsPage" stopProcessing="true">
+	<match url="^(.*)_(.*)_(.*).html" />
+	<action type="Rewrite" url='{R:1}.php?{R:2}={R:3}' />
+	</rule>
+
+	  </rules>
+	 </rewrite>
+    </system.webServer>
+</configuration>
