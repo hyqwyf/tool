@@ -1,17 +1,15 @@
 //生成支付页
 <?php
-include("../../../config/conn.php");//数据库
 
-//sql先插入订单到数据库
 
 //读取订单号
 //$ddbh="测试订单号";///直接访问本页面测试
 
 ini_set('date.timezone','Asia/Shanghai');
 
-$mchid = '149651642';          //微信支付商户
-$appid = 'wxc35486954de04f5';  //公众号APPID 
-$apiKey = '6ac2b9ef5a7c1190';//设置API密钥
+$mchid = '';          //微信支付商户
+$appid = '';  //公众号APPID 
+$apiKey = '';//设置API密钥
 $wxPay = new WxpayService($mchid,$appid,$apiKey);
 $outTradeNo = $ddbh;     //你商城的商品订单号
 $payAmount = 1;          //金额，单位:元
@@ -229,14 +227,13 @@ class WxpayService
 
 
 <?php
-include("../../../config/conn.php");
 
 ini_set('date.timezone','Asia/Shanghai');
 error_reporting(0);
 
-$mchid = '149651542';          //微信支付商户号
-$appid = 'wxc35486954de04f5';  //公众号APPID
-$apiKey = '6ac2b9e5';   //API密钥
+$mchid = '';          //微信支付商户号
+$appid = '';  //公众号APPID
+$apiKey = '';   //API密钥
 $wxPay = new WxpayService($mchid,$appid,$apiKey);
 $result = $wxPay->notify();
 //file_put_contents('2.txt',json_encode($result));//测试结果
